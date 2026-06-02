@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>빵애</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans KR',sans-serif;background:#0e0e10;color:#e8e8e8;height:100dvh;display:flex;overflow:hidden}
+
+/* 사이드바 */
+#sidebar{width:260px;min-width:260px;background:#18181b;border-right:1px solid #2a2a2e;display:flex;flex-direction:column;height:100dvh}
+#sidebar-top{padding:16px 14px 10px;border-bottom:1px solid #2a2a2e}
+#logo{font-size:20px;font-weight:800;color:#ff3b3b;letter-spacing:-0.5px;margin-bottom:12px}
+#new-char-btn{width:100%;padding:9px 12px;background:#ff3b3b;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;font-family:inherit}
+#new-char-btn:hover{background:#e02020}
+#sidebar-tabs{display:flex;border-bottom:1px solid #2a2a2e;padding:0 14px}
+.stab{padding:10px 4px;font-size:13px;color:#888;cursor:pointer;border-bottom:2px solid transparent;margin-right:16px}
+.stab.active{color:#fff;border-bottom-color:#ff3b3b;font-weight:600}
+#sidebar-section{padding:10px 14px 4px;font-size:11px;color:#555;font-weight:600;letter-spacing:0.5px}
+#chat-list{flex:1;overflow-y:auto;padding:4px 8px}
+.chat-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px}
+.chat-item:hover{background:#222226}
+.chat-item.active{background:#222226}
+.chat-thumb{width:40px;height:40px;border-radius:8px;background:#2a2a2e;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden}
+.chat-thumb img{width:100%;height:100%;object-fit:cover}
+.chat-info{flex:1;min-width:0}
+.chat-name{font-size:13px;font-weight:500;color:#ddd;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-preview{font-size:11px;color:#666;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+#api-box{padding:12px 14px;border-top:1px solid #2a2a2e}
+#api-box label{font-size:11px;color:#555;display:block;margin-bottom:5px}
+#api-box label a{color:#888;text-decoration:underline;cursor:pointer}
+#api-key-input{width:100%;font-size:12px;padding:7px 10px;border-radius:7px;border:1px solid #2a2a2e;background:#111;color:#ccc;font-family:inherit;outline:none}
+#api-key-input:focus{border-color:#ff3b3b}
+
+/* 메인 */
+#main{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* 홈 */
+#home-view{flex:1;overflow-y:auto;padding:28px 32px}
+#home-view h2{font-size:18px;font-weight:700;color:#fff;margin-bottom:16px}
+#char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:16px}
+.char-card{background:#18181b;border-radius:12px;overflow:hidden;cursor:pointer;transition:transform 0.15s;border:1px solid #2a2a2e;position:relative}
+.char-card:hover{transform:translateY(-3px);border-color:#444}
+.char-card-thumb{width:100%;aspect-ratio:1/1;background:#222;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}
+.char-card-thumb img{width:100%;height:100%;object-fit:cover}
+.char-card-body{padding:10px 12px 12px}
+.char-card-name{font-size:13px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.char-card-desc{font-size:11px;color:#777;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.5}
+.card-menu-btn{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,0.6);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;opacity:0;transition:opacity 0.15s}
+.char-card:hover .card-menu-btn{opacity:1}
+.card-menu{position:absolute;top:40px;right:8px;background:#222;border:1px solid #333;border-radius:8px;overflow:hidden;display:none;z-index:5}
+.card-menu.open{display:block}
+.card-menu button{display:block;width:100%;padding:8px 16px;background:none;border:none;color:#ddd;font-size:13px;cursor:pointer;text-align:left;font-family:inherit;white-space:nowrap}
+.card-menu button:hover{background:#333}
+.card-menu .danger{color:#ff5555}
+#home-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:12px;color:#444}
+#home-empty i{font-size:48px}
+#home-empty button{margin-top:8px;padding:9px 20px;background:#ff3b3b;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* 정보 모달 */
+#info-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:20;align-items:center;justify-content:center}
+#info-modal-bg.open{display:flex}
+#info-modal{background:#18181b;border-radius:16px;width:560px;max-width:calc(100vw - 32px);max-height:85vh;overflow-y:auto;border:1px solid #2a2a2e}
+#info-modal-header{padding:16px 20px;border-bottom:1px solid #2a2a2e;display:flex;align-items:center;justify-content:space-between}
+#info-modal-header span{font-size:15px;font-weight:600;color:#fff}
+#info-modal-close{background:none;border:none;color:#888;font-size:22px;cursor:pointer;line-height:1}
+#info-modal-body{padding:20px}
+#info-modal-top{display:flex;gap:16px;margin-bottom:20px}
+#info-modal-cover{width:120px;min-width:120px;aspect-ratio:1/1;background:#222;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:48px;overflow:hidden}
+#info-modal-cover img{width:100%;height:100%;object-fit:cover}
+#info-modal-name{font-size:18px;font-weight:700;color:#fff;margin-bottom:6px}
+#info-modal-author{font-size:12px;color:#888;margin-bottom:10px}
+#info-modal-desc{font-size:13px;color:#bbb;line-height:1.7}
+#info-modal-footer{padding:16px 20px;border-top:1px solid #2a2a2e;display:flex;gap:10px}
+#info-modal-footer button{flex:1;padding:12px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;border:none}
+#btn-continue{background:#333;color:#fff}
+#btn-new{background:#fff;color:#111}
+
+/* 채팅 */
+#chat-view{display:none;flex-direction:column;flex:1;overflow:hidden}
+#chat-header-bar{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid #1e1e22;background:#18181b;flex-shrink:0}
+#chat-back{background:none;border:none;color:#aaa;font-size:20px;cursor:pointer;display:flex;align-items:center;padding:4px}
+#chat-back:hover{color:#fff}
+#chat-header-av{width:32px;height:32px;border-radius:8px;background:#2a2a2e;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden}
+#chat-header-av img{width:100%;height:100%;object-fit:cover}
+#chat-header-info{flex:1;min-width:0}
+#chat-header-name{font-size:15px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chat-header-desc{font-size:12px;color:#666;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#chat-messages{flex:1;overflow-y:auto;display:flex;flex-direction:column;background:#0e0e10}
+.ai-block{display:flex;flex-direction:column;margin-bottom:4px}
+.ai-img-wrap{width:100%;overflow:hidden}
+.ai-img-wrap img{width:100%;display:block;object-fit:cover;max-height:420px}
+.ai-text-wrap{padding:16px 20px 20px;font-size:15px;color:#e0e0e0;line-height:2;white-space:pre-wrap;word-break:break-word}
+.ai-text-wrap .cname{font-weight:700;color:#fff}
+.ai-text-wrap img{max-width:100%;border-radius:10px;margin:8px 0;display:block}
+.info-card{margin:0 16px 16px;background:#2a2a2e;border-radius:10px;padding:14px 16px;font-size:13px;color:#bbb;line-height:1.8}
+.info-card-label{font-size:11px;color:#666;font-weight:600;letter-spacing:1px;margin-bottom:8px}
+.msg-user{align-self:flex-end;margin:6px 16px 6px auto;max-width:72%}
+.msg-user .bubble{background:#ff3b3b;color:#fff;border-radius:18px 4px 18px 18px;padding:11px 16px;font-size:14px;line-height:1.7;word-break:break-word;white-space:pre-wrap}
+.typing-wrap{padding:12px 20px;display:flex;align-items:center;gap:6px}
+.typing span{width:6px;height:6px;background:#555;border-radius:50%;animation:bounce 1.2s infinite;display:inline-block}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-7px)}}
+.guide-block{margin:0 16px 12px;background:#2a2200;border:1px solid #4a3800;border-radius:10px;padding:12px 16px;font-size:13px;color:#c8a840;line-height:1.6}
+.rec-block{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 20px}
+.rec-btn{background:#18181b;border:1px solid #3a3a3e;border-radius:20px;padding:8px 16px;font-size:13px;color:#ccc;cursor:pointer;font-family:inherit}
+.rec-btn:hover{border-color:#888;color:#fff}
+#chat-input-area{padding:14px 20px;border-top:1px solid #1e1e22;display:flex;gap:10px;align-items:flex-end;background:#0e0e10;flex-shrink:0}
+#msg-input{flex:1;resize:none;padding:11px 16px;border-radius:22px;border:1px solid #2a2a2e;background:#18181b;color:#e8e8e8;font-size:14px;line-height:1.5;max-height:120px;font-family:inherit;outline:none}
+#msg-input:focus{border-color:#555}
+#send-btn{width:40px;height:40px;border-radius:50%;background:#ff3b3b;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;font-size:16px}
+#send-btn:hover{background:#cc2020}
+#send-btn:disabled{background:#333;color:#555;cursor:not-allowed}
+
+/* 제작 모달 */
+#make-modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:30;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 0}
+#make-modal-bg.open{display:flex}
+#make-modal{background:#18181b;border-radius:16px;padding:24px;width:500px;max-width:calc(100vw - 32px);border:1px solid #2a2a2e;margin:auto}
+#make-modal h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+#make-modal h3 button{background:none;border:none;color:#666;font-size:22px;cursor:pointer;line-height:1}
+.mfield{margin-bottom:16px}
+.mfield label{font-size:12px;color:#888;font-weight:500;display:block;margin-bottom:6px}
+.mfield input,.mfield textarea{width:100%;padding:9px 12px;border-radius:8px;border:1px solid #2a2a2e;background:#111;color:#ddd;font-size:14px;font-family:inherit;outline:none}
+.mfield input:focus,.mfield textarea:focus{border-color:#ff3b3b}
+.mfield textarea{resize:vertical;min-height:80px}
+.req{color:#ff3b3b;margin-left:2px}
+.img-upload{display:flex;align-items:center;gap:12px}
+.img-preview{width:80px;height:80px;border-radius:10px;background:#222;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;font-size:32px;color:#555;border:1px dashed #333}
+.img-preview img{width:100%;height:100%;object-fit:cover}
+.img-upload-btn{padding:8px 14px;background:#222;border:1px solid #333;border-radius:8px;color:#ccc;font-size:12px;cursor:pointer;font-family:inherit}
+.img-upload-btn:hover{background:#2a2a2e}
+.modal-btns{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.modal-btns button{padding:9px 20px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none}
+#mk-cancel{background:#2a2a2e;color:#aaa}
+#mk-save{background:#ff3b3b;color:#fff}
+
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <div id="sidebar-top">
+    <div id="logo">빵애</div>
+    <button id="new-char-btn" onclick="openMakeModal()"><i class="ti ti-plus"></i>새 캐릭터</button>
+  </div>
+  <div id="sidebar-tabs">
+    <div class="stab active">채팅 목록</div>
+  </div>
+  <div id="sidebar-section">최근 대화</div>
+  <div id="chat-list"></div>
+  <div id="api-box">
+    <label>Gemini API 키 (<a onclick="window.open('https://aistudio.google.com/apikey','_blank')">발급받기</a>)</label>
+    <input id="api-key-input" type="password" placeholder="AIza..." oninput="saveApiKey(this.value)">
+  </div>
+</div>
+
+<div id="main">
+  <div id="home-view">
+    <h2>내 캐릭터</h2>
+    <div id="char-grid"></div>
+    <div id="home-empty" style="display:none">
+      <i class="ti ti-mood-empty"></i>
+      <p>아직 캐릭터가 없어요</p>
+      <button onclick="openMakeModal()">첫 캐릭터 만들기</button>
+    </div>
+  </div>
+
+  <div id="chat-view">
+    <div id="chat-header-bar">
+      <button id="chat-back" onclick="goHome()"><i class="ti ti-arrow-left"></i></button>
+      <div id="chat-header-av"></div>
+      <div id="chat-header-info">
+        <div id="chat-header-name"></div>
+        <div id="chat-header-desc"></div>
+      </div>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-area">
+      <textarea id="msg-input" rows="1" placeholder="메시지를 입력하세요..." onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+      <button id="send-btn" onclick="sendMessage()"><i class="ti ti-send"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- 정보 모달 -->
+<div id="info-modal-bg">
+  <div id="info-modal">
+    <div id="info-modal-header">
+      <span>스토리 정보</span>
+      <button id="info-modal-close" onclick="closeInfoModal()"><i class="ti ti-x"></i></button>
+    </div>
+    <div id="info-modal-body">
+      <div id="info-modal-top">
+        <div id="info-modal-cover"></div>
+        <div style="flex:1">
+          <div id="info-modal-name"></div>
+          <div id="info-modal-author"></div>
+          <div id="info-modal-desc"></div>
+        </div>
+      </div>
+    </div>
+    <div id="info-modal-footer">
+      <button id="btn-continue" onclick="startChat(false)">이어하기</button>
+      <button id="btn-new" onclick="startChat(true)">새로하기</button>
+    </div>
+  </div>
+</div>
+
+<!-- 제작/수정 모달 -->
+<div id="make-modal-bg">
+  <div id="make-modal">
+    <h3><span id="make-title">새 캐릭터 만들기</span><button onclick="closeMakeModal()"><i class="ti ti-x"></i></button></h3>
+
+    <div class="mfield">
+      <label>이름 <span class="req">*</span> <span style="color:#555;font-weight:400">(2~30자)</span></label>
+      <input id="f-name" placeholder="2~30자 이내로 입력해 주세요" maxlength="30">
+    </div>
+    <div class="mfield">
+      <label>이미지 (1:1 권장)</label>
+      <div class="img-upload">
+        <div class="img-preview" id="img-preview"><i class="ti ti-photo"></i></div>
+        <div>
+          <input type="file" id="f-image" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+          <button type="button" class="img-upload-btn" onclick="document.getElementById('f-image').click()">이미지 선택</button>
+          <button type="button" class="img-upload-btn" onclick="clearImage()" style="margin-left:6px">제거</button>
+        </div>
+      </div>
+    </div>
+    <div class="mfield">
+      <label>한 줄 소개</label>
+      <input id="f-desc" placeholder="캐릭터를 한 줄로 소개해 주세요">
+    </div>
+    <div class="mfield">
+      <label>프롬프트 <span class="req">*</span></label>
+      <textarea id="f-prompt" style="min-height:90px" placeholder="AI에게 지시할 내용을 자유 형식으로 입력해 주세요"></textarea>
+    </div>
+    <div class="mfield">
+      <label>프롤로그 <span class="req">*</span></label>
+      <textarea id="f-prologue" style="min-height:80px" placeholder="스토리의 프롤로그를 작성해 주세요"></textarea>
+    </div>
+    <div class="mfield">
+      <label>시작설정 이름 <span class="req">*</span></label>
+      <input id="f-scene-name" placeholder="시작설정의 이름을 작성해 주세요">
+    </div>
+    <div class="mfield">
+      <label>시작 상황</label>
+      <textarea id="f-scene" style="min-height:70px" placeholder="스토리 전개를 위한 시작 상황 정보를 입력해 주세요"></textarea>
+    </div>
+    <div class="mfield">
+      <label>플레이 가이드</label>
+      <textarea id="f-guide" style="min-height:60px" placeholder="사용자에게만 보이는 가이드 메시지"></textarea>
+    </div>
+    <div class="mfield">
+      <label>추천 답변 <span style="color:#555;font-weight:400">(최대 3개)</span></label>
+      <input id="f-rec1" placeholder="추천 답변 1" style="margin-bottom:6px">
+      <input id="f-rec2" placeholder="추천 답변 2" style="margin-bottom:6px">
+      <input id="f-rec3" placeholder="추천 답변 3">
+    </div>
+
+    <div class="modal-btns">
+      <button id="mk-cancel" onclick="closeMakeModal()">취소</button>
+      <button id="mk-save" onclick="saveChar()">만들기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let chars=JSON.parse(localStorage.getItem('cc_chars')||'[]');
+let chats=JSON.parse(localStorage.getItem('cc_chats')||'{}');
+let apiKey=localStorage.getItem('cc_apikey')||'';
+let activeId=null;
+let isLoading=false;
+let infoTargetId=null;
+let editingId=null;
+let currentImage='';
+
+document.getElementById('api-key-input').value=apiKey;
+
+function saveApiKey(v){apiKey=v.trim();localStorage.setItem('cc_apikey',apiKey)}
+function saveChars(){localStorage.setItem('cc_chars',JSON.stringify(chars))}
+function saveChatsStore(){localStorage.setItem('cc_chats',JSON.stringify(chats))}
+
+function avatarHtml(c){
+  if(c.image) return `<img src="${c.image}" alt="">`;
+  return '<i class="ti ti-user" style="color:#555"></i>';
+}
+
+function renderGrid(){
+  const grid=document.getElementById('char-grid');
+  const empty=document.getElementById('home-empty');
+  grid.innerHTML='';
+  if(!chars.length){empty.style.display='flex';return;}
+  empty.style.display='none';
+  chars.forEach(c=>{
+    const card=document.createElement('div');
+    card.className='char-card';
+    card.innerHTML=`
+      <button class="card-menu-btn" onclick="event.stopPropagation();toggleCardMenu('${c.id}')"><i class="ti ti-dots"></i></button>
+      <div class="card-menu" id="menu-${c.id}">
+        <button onclick="event.stopPropagation();editChar('${c.id}')">수정</button>
+        <button class="danger" onclick="event.stopPropagation();deleteChar('${c.id}')">삭제</button>
+      </div>
+      <div class="char-card-thumb">${avatarHtml(c)}</div>
+      <div class="char-card-body">
+        <div class="char-card-name">${c.name}</div>
+        <div class="char-card-desc">${c.desc||'소개 없음'}</div>
+      </div>`;
+    card.onclick=()=>openInfoModal(c.id);
+    grid.appendChild(card);
+  });
+}
+
+function toggleCardMenu(id){
+  document.querySelectorAll('.card-menu').forEach(m=>{
+    if(m.id!=='menu-'+id) m.classList.remove('open');
+  });
+  document.getElementById('menu-'+id).classList.toggle('open');
+}
+document.addEventListener('click',()=>{
+  document.querySelectorAll('.card-menu').forEach(m=>m.classList.remove('open'));
+});
+
+function renderSidebar(){
+  const el=document.getElementById('chat-list');
+  el.innerHTML='';
+  const withChat=chars.filter(c=>(chats[c.id]||[]).length>0);
+  if(!withChat.length){
+    el.innerHTML='<p style="font-size:12px;color:#444;text-align:center;padding:16px 8px">대화 기록이 없어요</p>';
+    return;
+  }
+  withChat.forEach(c=>{
+    const msgs=chats[c.id]||[];
+    const last=msgs.length?msgs[msgs.length-1].content.replace(/!\[[^\]]*\]\([^)]+\)/g,'[이미지]').replace(/```[\s\S]*?```/g,''):'아직 대화 없음';
+    const d=document.createElement('div');
+    d.className='chat-item'+(c.id===activeId?' active':'');
+    d.innerHTML=`<div class="chat-thumb">${avatarHtml(c)}</div><div class="chat-info"><div class="chat-name">${c.name}</div><div class="chat-preview">${last.slice(0,28)}${last.length>28?'...':''}</div></div>`;
+    d.onclick=()=>openInfoModal(c.id);
+    el.appendChild(d);
+  });
+}
+
+function openInfoModal(id){
+  infoTargetId=id;
+  const c=chars.find(x=>x.id===id);
+  if(!c)return;
+  document.getElementById('info-modal-cover').innerHTML=avatarHtml(c);
+  document.getElementById('info-modal-name').textContent=c.name;
+  document.getElementById('info-modal-name').style.cssText='font-size:18px;font-weight:700;color:#fff;margin-bottom:6px';
+  document.getElementById('info-modal-author').textContent=c.sceneName||'';
+  document.getElementById('info-modal-desc').textContent=c.desc||'';
+  const hasPrev=(chats[id]||[]).length>0;
+  document.getElementById('btn-continue').style.display=hasPrev?'block':'none';
+  document.getElementById('info-modal-bg').classList.add('open');
+}
+function closeInfoModal(){document.getElementById('info-modal-bg').classList.remove('open');infoTargetId=null;}
+
+function startChat(isNew){
+  if(!infoTargetId)return;
+  const id=infoTargetId;
+  closeInfoModal();
+  if(isNew) chats[id]=[];
+  saveChatsStore();
+  openChat(id);
+}
+
+function openChat(id){
+  activeId=id;
+  const c=chars.find(x=>x.id===id);
+  if(!c)return;
+  document.getElementById('home-view').style.display='none';
+  document.getElementById('chat-view').style.display='flex';
+  document.getElementById('chat-header-av').innerHTML=avatarHtml(c);
+  document.getElementById('chat-header-name').textContent=c.name;
+  document.getElementById('chat-header-desc').textContent=c.desc||'';
+  renderMessages();
+  renderSidebar();
+  setTimeout(()=>{const m=document.getElementById('chat-messages');m.scrollTop=m.scrollHeight;},80);
+  document.getElementById('msg-input').focus();
+}
+
+function goHome(){
+  activeId=null;
+  document.getElementById('chat-view').style.display='none';
+  document.getElementById('home-view').style.display='block';
+  renderGrid();
+  renderSidebar();
+}
+
+function renderMessages(){
+  const el=document.getElementById('chat-messages');
+  const c=chars.find(x=>x.id===activeId);
+  if(!c)return;
+  const msgs=chats[activeId]||[];
+  el.innerHTML='';
+  if(c.prologue) appendAiBlock(el, c.prologue, c.name);
+  msgs.forEach(m=>{
+    if(m.role==='user'){
+      const d=document.createElement('div');
+      d.className='msg-user';
+      d.innerHTML=`<div class="bubble">${escapeHtml(m.content).replace(/\n/g,'<br>')}</div>`;
+      el.appendChild(d);
+    } else {
+      appendAiBlock(el, m.content, c.name);
+    }
+  });
+  if(msgs.length===0){
+    if(c.guide){
+      const g=document.createElement('div');
+      g.className='guide-block';
+      g.innerHTML='<strong>📖 플레이 가이드</strong><br>'+escapeHtml(c.guide).replace(/\n/g,'<br>');
+      el.appendChild(g);
+    }
+    if(c.recs&&c.recs.length){
+      const r=document.createElement('div');
+      r.className='rec-block';
+      c.recs.forEach(rec=>{
+        const btn=document.createElement('button');
+        btn.className='rec-btn';
+        btn.textContent=rec;
+        btn.onclick=()=>{document.getElementById('msg-input').value=rec;sendMessage();};
+        r.appendChild(btn);
+      });
+      el.appendChild(r);
+    }
+  }
+}
+
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function appendAiBlock(el, rawText, name){
+  // 1. 상단 이미지 추출 (텍스트 맨 앞에 나오는 이미지들)
+  const text=rawText;
+  const topImgs=[];
+  let remaining=text;
+  // 텍스트 맨 앞 또는 줄바꿈 직후의 이미지 마크다운만 상단 배너로
+  const topImgMatch=remaining.match(/^(\s*!\[[^\]]*\]\([^)]+\)\s*)+/);
+  if(topImgMatch){
+    const matches=topImgMatch[0].matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g);
+    for(const m of matches) topImgs.push(m[2]);
+    remaining=remaining.slice(topImgMatch[0].length);
+  }
+
+  if(topImgs.length>0){
+    const imgWrap=document.createElement('div');
+    imgWrap.className='ai-img-wrap';
+    topImgs.forEach(src=>{
+      const img=document.createElement('img');
+      img.src=src;
+      img.onerror=function(){this.style.display='none';};
+      imgWrap.appendChild(img);
+    });
+    el.appendChild(imgWrap);
+  }
+
+  // 2. 코드블록(Info) 분리
+  const blocks=[];
+  let last=0;
+  const re=/```([^\n]*)\n?([\s\S]*?)```/g;
+  let m2;
+  while((m2=re.exec(remaining))!==null){
+    if(m2.index>last) blocks.push({type:'text',content:remaining.slice(last,m2.index)});
+    blocks.push({type:'info',label:m2[1].trim()||'INFO',content:m2[2].trim()});
+    last=m2.index+m2[0].length;
+  }
+  if(last<remaining.length) blocks.push({type:'text',content:remaining.slice(last)});
+
+  blocks.forEach(b=>{
+    if(b.type==='text'){
+      const t=b.content.trim();
+      if(!t) return;
+      const tw=document.createElement('div');
+      tw.className='ai-text-wrap';
+      tw.innerHTML=parseInlineMarkdown(t, name);
+      el.appendChild(tw);
+    } else {
+      const ic=document.createElement('div');
+      ic.className='info-card';
+      ic.innerHTML=`<div class="info-card-label">${escapeHtml(b.label.toUpperCase())}</div>${escapeHtml(b.content).replace(/\n/g,'<br>')}`;
+      el.appendChild(ic);
+    }
+  });
+}
+
+function parseInlineMarkdown(text, name){
+  // 인라인 이미지를 img 태그로
+  let html=escapeHtml(text);
+  // escape했으니 원본 패턴이 변형됨 → 원본에서 위치 추출 후 다시
+  let result='';
+  let i=0;
+  const imgRe=/!\[([^\]]*)\]\(([^)]+)\)/g;
+  let lastIdx=0;
+  let mm;
+  while((mm=imgRe.exec(text))!==null){
+    result+=escapeHtml(text.slice(lastIdx,mm.index));
+    result+=`<img src="${mm[2]}" alt="${escapeHtml(mm[1])}" onerror="this.style.display='none'">`;
+    lastIdx=mm.index+mm[0].length;
+  }
+  result+=escapeHtml(text.slice(lastIdx));
+
+  // 줄바꿈
+  result=result.replace(/\n/g,'<br>');
+  // 캐릭터명 강조
+  const escaped=name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  result=result.replace(new RegExp('('+escaped+'\\s*[|｜][^<\\n]*)','g'),'<span class="cname">$1</span>');
+  return result;
+}
+
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMessage();}}
+
+async function sendMessage(){
+  if(isLoading||!activeId)return;
+  const input=document.getElementById('msg-input');
+  const text=input.value.trim();
+  if(!text)return;
+  if(!apiKey){alert('좌측 하단에 Gemini API 키를 먼저 입력해주세요.');return;}
+  const c=chars.find(x=>x.id===activeId);
+  if(!chats[activeId])chats[activeId]=[];
+  chats[activeId].push({role:'user',content:text});
+  input.value='';
+  input.style.height='auto';
+  saveChatsStore();
+  renderMessages();
+
+  const msgEl=document.getElementById('chat-messages');
+  const typing=document.createElement('div');
+  typing.className='typing-wrap';
+  typing.id='typing-indicator';
+  typing.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  msgEl.appendChild(typing);
+  msgEl.scrollTop=msgEl.scrollHeight;
+
+  isLoading=true;
+  document.getElementById('send-btn').disabled=true;
+
+  let errorMsg='';
+  try{
+    const history=(chats[activeId]||[]).slice(0,-1).map(m=>({role:m.role==='user'?'user':'model',parts:[{text:m.content}]}));
+    const systemText=[c.prompt||`너는 ${c.name}이야.`,c.scene?`[시작 상황]\n${c.scene}`:''].filter(Boolean).join('\n\n');
+    const body={
+      system_instruction:{parts:[{text:systemText}]},
+      contents:[...history,{role:'user',parts:[{text}]}],
+      generationConfig:{maxOutputTokens:1500}
+    };
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const res=await fetch(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
+    });
+    const data=await res.json();
+    if(!res.ok || data?.error){
+      errorMsg='API 오류 ('+res.status+'): '+(data?.error?.message||JSON.stringify(data));
+    } else {
+      const parts=data?.candidates?.[0]?.content?.parts||[];
+      const reply=parts.filter(p=>p.text&&!p.thought).map(p=>p.text).join('')||'(빈 응답이 반환되었습니다)';
+      chats[activeId].push({role:'assistant',content:reply});
+    }
+  }catch(e){
+    errorMsg='네트워크 오류: '+e.message+' (브라우저 콘솔에서 자세한 내용 확인)';
+    console.error(e);
+  }
+  if(errorMsg){
+    chats[activeId].push({role:'assistant',content:errorMsg});
+  }
+  saveChatsStore();
+
+  isLoading=false;
+  document.getElementById('send-btn').disabled=false;
+  const t=document.getElementById('typing-indicator');
+  if(t)t.remove();
+  renderMessages();
+  renderSidebar();
+  setTimeout(()=>{msgEl.scrollTop=msgEl.scrollHeight;},50);
+}
+
+function handleImageUpload(e){
+  const file=e.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    currentImage=ev.target.result;
+    document.getElementById('img-preview').innerHTML=`<img src="${currentImage}">`;
+  };
+  reader.readAsDataURL(file);
+}
+function clearImage(){
+  currentImage='';
+  document.getElementById('img-preview').innerHTML='<i class="ti ti-photo"></i>';
+  document.getElementById('f-image').value='';
+}
+
+function openMakeModal(){
+  editingId=null;
+  currentImage='';
+  document.getElementById('make-title').textContent='새 캐릭터 만들기';
+  document.getElementById('mk-save').textContent='만들기';
+  ['f-name','f-desc','f-prompt','f-prologue','f-scene-name','f-scene','f-guide','f-rec1','f-rec2','f-rec3'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+  clearImage();
+  document.getElementById('make-modal-bg').classList.add('open');
+}
+
+function editChar(id){
+  const c=chars.find(x=>x.id===id);
+  if(!c)return;
+  editingId=id;
+  currentImage=c.image||'';
+  document.getElementById('make-title').textContent='캐릭터 수정';
+  document.getElementById('mk-save').textContent='저장';
+  document.getElementById('f-name').value=c.name;
+  document.getElementById('f-desc').value=c.desc||'';
+  document.getElementById('f-prompt').value=c.prompt||'';
+  document.getElementById('f-prologue').value=c.prologue||'';
+  document.getElementById('f-scene-name').value=c.sceneName||'';
+  document.getElementById('f-scene').value=c.scene||'';
+  document.getElementById('f-guide').value=c.guide||'';
+  document.getElementById('f-rec1').value=(c.recs&&c.recs[0])||'';
+  document.getElementById('f-rec2').value=(c.recs&&c.recs[1])||'';
+  document.getElementById('f-rec3').value=(c.recs&&c.recs[2])||'';
+  if(currentImage){
+    document.getElementById('img-preview').innerHTML=`<img src="${currentImage}">`;
+  } else {
+    document.getElementById('img-preview').innerHTML='<i class="ti ti-photo"></i>';
+  }
+  document.getElementById('make-modal-bg').classList.add('open');
+}
+
+function deleteChar(id){
+  const c=chars.find(x=>x.id===id);
+  if(!c)return;
+  if(!confirm(`'${c.name}' 캐릭터를 삭제하시겠어요? 대화 기록도 함께 삭제됩니다.`))return;
+  chars=chars.filter(x=>x.id!==id);
+  delete chats[id];
+  saveChars();
+  saveChatsStore();
+  renderGrid();
+  renderSidebar();
+}
+
+function closeMakeModal(){document.getElementById('make-modal-bg').classList.remove('open');}
+
+function saveChar(){
+  const name=document.getElementById('f-name').value.trim();
+  if(name.length<2||name.length>30){alert('이름은 2~30자 이내로 입력해 주세요');return;}
+  const prompt=document.getElementById('f-prompt').value.trim();
+  if(!prompt){alert('프롬프트는 필수 항목입니다');return;}
+  const prologue=document.getElementById('f-prologue').value.trim();
+  if(!prologue){alert('프롤로그는 필수 항목입니다');return;}
+  const sceneName=document.getElementById('f-scene-name').value.trim();
+  if(!sceneName){alert('시작설정 이름은 필수 항목입니다');return;}
+  const recs=[1,2,3].map(i=>document.getElementById('f-rec'+i).value.trim()).filter(Boolean);
+  const payload={
+    name,image:currentImage,
+    desc:document.getElementById('f-desc').value.trim(),
+    prompt,prologue,sceneName,
+    scene:document.getElementById('f-scene').value.trim(),
+    guide:document.getElementById('f-guide').value.trim(),
+    recs
+  };
+  if(editingId){
+    const idx=chars.findIndex(x=>x.id===editingId);
+    if(idx>=0) chars[idx]={...chars[idx],...payload};
+  } else {
+    payload.id=Date.now().toString();
+    chars.push(payload);
+  }
+  saveChars();
+  closeMakeModal();
+  renderGrid();
+  renderSidebar();
+}
+
+renderGrid();
+renderSidebar();
+</script>
+</body>
+</html>
